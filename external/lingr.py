@@ -12,7 +12,10 @@ Lingr API Module
 """
 import httplib
 import urllib
-from xml.dom import minidom
+
+from urllib import urlencode
+from urlparse import urlunparse
+import json
 
 __author__ = 'mattn <mattn.jp@gmail.com>'
 __url__ = 'http://mattn.kaoriya.net/'
@@ -25,86 +28,34 @@ class LingrAPI:
   """
   initialize class variables and create session.
   """
-  def __init__(self, api_key, nickname):
+  def __init__(self, api_key, nickname, password):
     self.api_key = api_key
     self.nickname = nickname
     self.session = None
-    self.conn = httplib.HTTPConnection("www.lingr.com")
-    self.conn.request('POST', '/api/session/create/',
-        body = "api_key=%s" % urllib.quote(api_key))
+    self.conn = httplib.HTTPConnection("lingr.com") #www.lingr.com is obsolete
+
+    body = urlencode({'api_key':self.api_key, 'user':nickname, 'password':password})
+    self.conn.request('POST', '/api/session/create/', body=body)
     response = self.conn.getresponse()
     data = response.read()
-    doc = minidom.parseString(data)
-    if doc.getElementsByTagName('status')[0].childNodes[0].data != 'ok':
-      raise Exception({
-          'code' : doc.getElementsByTagName('code')[0].childNodes[0].data,
-          'message' : doc.getElementsByTagName('message')[0].childNodes[0].data})
-    self.session = doc.getElementsByTagName('session')[0].childNodes[0].data
+    j = json.loads(data)
+    if j['status'] != 'ok':
+      raise Exception(j)
+    self.session = j['session']
 
-  """
-  destroy session.
-  """
-  def __del__(self):
-    if self.session:
-      import urllib
-      from xml.dom import minidom
-      self.conn.request('POST', '/api/session/destroy',
-          body = "session=%s" % urllib.quote(self.session))
-      response = self.conn.getresponse()
-      data = response.read()
-      doc = minidom.parseString(data)
-      if doc.getElementsByTagName('status')[0].childNodes[0].data != 'ok':
-        raise Exception({
-            'code' : doc.getElementsByTagName('code')[0].childNodes[0].data,
-            'message' : doc.getElementsByTagName('message')[0].childNodes[0].data})
-
-  """
-  enter room and return room_id
-  """
   def enter_room(self, room_id):
-    self.conn.request('POST', '/api/room/enter',
-        body = "session=%s&id=%s&nickname=%s"
-            % (urllib.quote(self.session), urllib.quote(room_id), urllib.quote(self.nickname)))
-    response = self.conn.getresponse()
-    data = response.read()
-    doc = minidom.parseString(data)
-    if doc.getElementsByTagName('status')[0].childNodes[0].data != 'ok':
-      raise Exception({
-          'code' : doc.getElementsByTagName('code')[0].childNodes[0].data,
-          'message' : doc.getElementsByTagName('message')[0].childNodes[0].data})
-    return doc.getElementsByTagName('ticket')[0].childNodes[0].data
+    self.room = room_id
 
-  """
-  say message using ticket.
-  """
-  def say(self, ticket, message):
-    self.conn.request('POST', '/api/room/say',
-        body = "session=%s&ticket=%s&message=%s"
-            % (urllib.quote(self.session), urllib.quote(ticket), urllib.quote(message)))
+  def say(self, message):
+    body = urlencode({'api_key':self.api_key, 'session':self.session,'room':self.room, 'nickname':self.nickname, 'text': message})
+    self.conn.request('POST', '/api/room/say', body=body)
     response = self.conn.getresponse()
     data = response.read()
-    doc = minidom.parseString(data)
-    if doc.getElementsByTagName('status')[0].childNodes[0].data != 'ok':
-      raise Exception({
-          'code' : doc.getElementsByTagName('code')[0].childNodes[0].data,
-          'message' : doc.getElementsByTagName('message')[0].childNodes[0].data})
-    return doc.getElementsByTagName('occupant_id')[0].childNodes[0].data
+    j = json.loads(data)
+    if j['status'] != 'ok':
+      raise Exception(j)
+    return j
 
-  """
-  exit room
-  """
-  def exit_room(self, ticket):
-    self.conn.request('POST', '/api/room/exit',
-        body = "session=%s&ticket=%s"
-            % (urllib.quote(self.session), urllib.quote(ticket)))
-    response = self.conn.getresponse()
-    data = response.read()
-    doc = minidom.parseString(data)
-    if doc.getElementsByTagName('status')[0].childNodes[0].data != 'ok':
-      raise Exception({
-          'code' : doc.getElementsByTagName('code')[0].childNodes[0].data,
-          'message' : doc.getElementsByTagName('message')[0].childNodes[0].data})
-    return doc.getElementsByTagName('status')[0].childNodes[0].data
 
 #  def find_room(title):
 #    self.conn.request('GET', '/search/rooms',
@@ -121,7 +72,6 @@ if __name__ == '__main__':
     message = sys.argv[4]
 
     api = LingrAPI(api_key, nickname)
-    ticket = api.enter_room(room_id)
-    api.say(ticket, message)
-    api.exit_room(ticket)
+    api.enter_room(room_id)
+    api.say(message)
 
