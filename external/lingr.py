@@ -3,7 +3,7 @@
 
 
 #
-# from
+# it was from
 # http://mattn.kaoriya.net/software/lang/python/20080317103644.htm
 #
 

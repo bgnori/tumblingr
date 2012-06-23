@@ -1,6 +1,5 @@
 
-
-from external import lingr
+from external import lingr2
 
 import sys
 
