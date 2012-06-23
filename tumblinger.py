@@ -1,13 +1,24 @@
 
-from external import lingr2
+from external.lingr2 import Session
 
 import sys
 
-if len(sys.argv) < 2: 
+if len(sys.argv) < 3: 
     sys.exit()
 
-api_key="kzRHJn"
-api = lingr.LingrAPI(api_key, sys.argv[1], sys.argv[2])
-api.enter_room("computer_science")
-print api.say("test by python.")
+config = {}
+if len(sys.argv) == 3: 
+    config['user']= sys.argv[1]
+    config['password']= sys.argv[2]
+    config['nickname']= None
+
+else:
+    config['user']= sys.argv[1]
+    config['password']= sys.argv[2]
+
+Session.api_key = "kzRHJn"
+
+with Session(**config) as s:
+    s.enter("computer_science")
+    s.say("test by python.")
 
