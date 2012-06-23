@@ -1,5 +1,5 @@
 
-from external.lingr2 import Session
+from lingr import Session
 
 import sys
 
@@ -25,4 +25,5 @@ with Session(**config) as s:
     for i in range(4, len(sys.argv)):
         j = s.say(sys.argv[i])
         to_remove.append(j['message']['id'])
+
 
