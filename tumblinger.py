@@ -19,6 +19,10 @@ else:
 Session.api_key = "kzRHJn"
 
 with Session(**config) as s:
+    to_remove = []
     s.enter("computer_science")
-    s.say("test by python.")
+    s.enter("bgnori")
+    for i in range(4, len(sys.argv)):
+        j = s.say(sys.argv[i])
+        to_remove.append(j['message']['id'])
 

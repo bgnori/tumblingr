@@ -5,41 +5,68 @@ import httplib
 from urllib import urlencode
 import json
 
+'''
+    ToDo(?)
+    support message removal.
+    there is no offical api for it.
+    #http://lingr.com/room/computer_science/archives/2012/06-23#message-10303741
+'''
 
 HOST = "lingr.com"
 
-
 class Session:
     api_key = None
+
+    #https://github.com/lingr/lingr/wiki/Lingr-API
+    mappings = {
+            "api_session_create":"/api/session/create",
+            "api_session_verify":"/api/session/verify",
+            "api_session_destroy":"/api/session/destroy",
+            "api_room_show":"/api/room/show",
+            "api_room_get_archives":"/api/room/get_archives",
+            "api_room_subscribe":"/api/room/subscribe",
+            "api_room_unsubscribe":"/api/room/unsubscribe",
+            "api_room_say":"/api/room/say",
+            "api_user_get_rooms":"/api/user/get_rooms"}
+
     def __init__(self, user, password, nickname=None):
+        '''
+            Lingr ignores nickname!
+        '''
         assert self.api_key
         self.conn = None
         self.user = user
         self.password = password
-        self.session = None
-        if nickname:
-            self.nickname = nickname
-        else:
-            self.nickname = user
 
-    def request(self, action, **kw):
-        d = {'api_key':self.api_key}
-        if self.session:
-            d.update({"session":self.session})
+        self.values = {}
+        if nickname:
+            self.values["nickname"] = nickname
+        else:
+            self.values["nickname"] = user
+        self.values['api_key'] = self.api_key
+
+    def param(self, kw):
+        d = {}
+        d.update(self.values)
         d.update(kw)
-        body = urlencode(d)
-        self.conn.request('POST', action, body)
-        res = self.conn.getresponse()
-        d = res.read()
-        j = json.loads(d)
-        if j['status'] != 'ok':
-            raise Exception(j)
-        return j
+        return d
+
+    def __getattr__(self, name):
+        assert name in self.mappings
+        def handler(**args):
+            self.conn.request('POST', self.mappings[name], urlencode(self.param(args)))
+            res = self.conn.getresponse()
+            d = res.read()
+            j = json.loads(d)
+            if j['status'] != 'ok':
+                raise Exception(j)
+            return j
+        return handler
 
     def connect(self):
         self.conn = httplib.HTTPConnection(HOST)
-        j = self.request('/api/session/create/', user=self.user, password=self.password)
-        self.session = j['session']
+        j = self.api_session_create(user=self.user, password=self.password)
+        self.values['session']=j['session']
         return self
 
     def disconnect(self):
@@ -52,11 +79,10 @@ class Session:
         return self.disconnect()
 
     def enter(self, room):
-        self.room = room
+        self.values['room'] = room
 
     def say(self, text):
-        j = self.request('/api/room/say', room=self.room, nickname=self.nickname, text=text)
-        return j
+        return self.api_room_say(text=text)
 
 
 if __name__ == '__main__':
