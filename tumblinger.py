@@ -4,6 +4,7 @@ from external.lingr2 import Session
 import sys
 
 if len(sys.argv) < 3: 
+    print 'need user and password'
     sys.exit()
 
 config = {}

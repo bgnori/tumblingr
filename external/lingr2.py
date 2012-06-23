@@ -16,12 +16,18 @@ class Session:
         self.conn = None
         self.user = user
         self.password = password
+        self.session = None
         if nickname:
             self.nickname = nickname
         else:
             self.nickname = user
 
-    def request(self, action, body):
+    def request(self, action, **kw):
+        d = {'api_key':self.api_key}
+        if self.session:
+            d.update({"session":self.session})
+        d.update(kw)
+        body = urlencode(d)
         self.conn.request('POST', action, body)
         res = self.conn.getresponse()
         d = res.read()
@@ -32,8 +38,7 @@ class Session:
 
     def connect(self):
         self.conn = httplib.HTTPConnection(HOST)
-        body = urlencode({'api_key':self.api_key, 'user':self.user, 'password':self.password})
-        j = self.request('/api/session/create/', body=body)
+        j = self.request('/api/session/create/', user=self.user, password=self.password)
         self.session = j['session']
         return self
 
@@ -50,8 +55,7 @@ class Session:
         self.room = room
 
     def say(self, text):
-        body = urlencode({'api_key':self.api_key, 'session':self.session,'room':self.room, 'nickname':self.nickname, 'text': text})
-        j = self.request('/api/room/say', body=body)
+        j = self.request('/api/room/say', room=self.room, nickname=self.nickname, text=text)
         return j
 
 
