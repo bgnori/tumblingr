@@ -13,7 +13,11 @@ class APIError(StandardError):
     def __init__(self, msg, response=None):
         StandardError.__init__(self, msg)
 
+
 class Pyblr:
+
+    blog_pattern = re.compile("%s")
+
     def __init__(self, client):
         self.site = "http://api.tumblr.com"
         self.client = client
@@ -22,7 +26,8 @@ class Pyblr:
     def api_key(self):
         return {"api_key": self.client.consumer.key}
 
-    def api_setting(self):
+    @classmethod
+    def api_setting(cls):
         api_str = """
           info         /v2/blog/%s/info             api_key get
           followers    /v2/blog/%s/followers        oauth   get
@@ -51,7 +56,7 @@ class Pyblr:
             def _method(base_hostname="", params={}, api=api):
                 if isinstance(base_hostname, dict):
                     params = base_hostname
-                if re.compile("%s").search(api["path"]):
+                if self.blog_pattern.search(api["path"]):
                     api["path"] = api["path"] % base_hostname
                 if api["auth"] == "api_key":
                     params = dict(self.api_key().items() + params.items())
