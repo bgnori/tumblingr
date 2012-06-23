@@ -7,14 +7,13 @@ if len(sys.argv) < 3:
     sys.exit()
 
 config = {}
-if len(sys.argv) == 3: 
-    config['user']= sys.argv[1]
-    config['password']= sys.argv[2]
-    config['nickname']= None
+config['user']= sys.argv[1]
+config['password']= sys.argv[2]
 
+if len(sys.argv) == 3: 
+    config['nickname']= None
 else:
-    config['user']= sys.argv[1]
-    config['password']= sys.argv[2]
+    config['nickname']= sys.argv[3]
 
 Session.api_key = "kzRHJn"
 

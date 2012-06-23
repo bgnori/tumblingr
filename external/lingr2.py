@@ -10,8 +10,9 @@ HOST = "lingr.com"
 
 
 class Session:
-    api_key = "..."
+    api_key = None
     def __init__(self, user, password, nickname=None):
+        assert self.api_key
         self.conn = None
         self.user = user
         self.password = password
@@ -51,7 +52,7 @@ class Session:
     def say(self, text):
         body = urlencode({'api_key':self.api_key, 'session':self.session,'room':self.room, 'nickname':self.nickname, 'text': text})
         j = self.request('/api/room/say', body=body)
-        print j
+        return j
 
 
 if __name__ == '__main__':
